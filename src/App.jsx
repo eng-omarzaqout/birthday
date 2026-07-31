@@ -49,6 +49,7 @@ function BirthdayMessage({ onWish }) {
     <motion.div className="eyebrow" variants={line}>A LITTLE CELEBRATION FOR LEEN</motion.div>
     <motion.h1 variants={line}><span>Happy Birthday,</span> Leen! <b>✦</b></motion.h1>
     <div className="message-copy">{messageLines.map((text, index) => <motion.p key={text} className={index === 0 || index >= 5 ? 'emphasis' : ''} variants={line}>{text}</motion.p>)}</div>
+    <motion.p className="omar-dedication" variants={line}>From Omar, to his favorite person 🤍</motion.p>
     <motion.button className="wish-button" variants={line} whileHover={{ y: -2, scale: 1.02 }} whileTap={{ scale: .97 }} onClick={onWish}>Make a Wish <span>✦</span></motion.button>
   </motion.section>
 }
