@@ -7,3 +7,14 @@
   font-weight: 500;
   letter-spacing: 0.01em;
 }
+
+.youtube-audio-player {
+  position: fixed;
+  left: 0;
+  bottom: 0;
+  width: 1px;
+  height: 1px;
+  border: 0;
+  opacity: 0.01;
+  pointer-events: none;
+}

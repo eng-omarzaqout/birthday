@@ -69,32 +69,41 @@ function SoundButton({ muted, onToggle }) {
   return <motion.button className="sound-button" onClick={onToggle} aria-label={muted ? 'Turn music on' : 'Mute music'} whileTap={{ scale: .9 }}><span className={muted ? 'sound-bars muted' : 'sound-bars'}>{[0,1,2,3].map(i => <i key={i} />)}</span><span>{muted ? 'Sound off' : 'Sound on'}</span></motion.button>
 }
 
-function useAmbientSound() {
+function useYouTubeMusic() {
   const [muted, setMuted] = useState(true)
-  const contextRef = useRef(null), gainRef = useRef(null)
-  const start = useCallback(() => {
-    if (!contextRef.current) {
-      const AudioCtx = window.AudioContext || window.webkitAudioContext
-      if (!AudioCtx) return
-      const ctx = new AudioCtx(), master = ctx.createGain(); master.gain.value = 0; master.connect(ctx.destination)
-      ;[174.61, 220, 261.63, 329.63].forEach((frequency, i) => { const osc = ctx.createOscillator(), gain = ctx.createGain(); osc.type = i % 2 ? 'sine' : 'triangle'; osc.frequency.value = frequency; osc.detune.value = i * 3 - 4; gain.gain.value = .018 / (i + 1); osc.connect(gain).connect(master); osc.start() })
-      contextRef.current = ctx; gainRef.current = master
-    }
-    contextRef.current?.resume()
+  const playerRef = useRef(null)
+  const wantsToPlayRef = useRef(false)
+  const sendCommand = useCallback((func, args = []) => {
+    playerRef.current?.contentWindow?.postMessage(JSON.stringify({ event: 'command', func, args }), 'https://www.youtube.com')
   }, [])
-  const toggle = useCallback(() => { start(); const next = !muted; setMuted(next); gainRef.current?.gain.setTargetAtTime(next ? 0 : .65, contextRef.current.currentTime, .8) }, [muted, start])
-  const gentlyEnable = useCallback(() => { start(); setMuted(false); if (gainRef.current) gainRef.current.gain.setTargetAtTime(.65, contextRef.current.currentTime, 1.1) }, [start])
-  useEffect(() => () => { contextRef.current?.close() }, [])
-  return { muted, toggle, gentlyEnable }
+  const play = useCallback(() => {
+    wantsToPlayRef.current = true
+    setMuted(false)
+    sendCommand('setVolume', [34])
+    sendCommand('unMute')
+    sendCommand('playVideo')
+  }, [sendCommand])
+  const toggle = useCallback(() => {
+    if (muted) play()
+    else { setMuted(true); sendCommand('mute') }
+  }, [muted, play, sendCommand])
+  const onPlayerLoad = useCallback(() => {
+    sendCommand('setVolume', [34])
+    if (wantsToPlayRef.current) { sendCommand('unMute'); sendCommand('playVideo') }
+    else sendCommand('mute')
+  }, [sendCommand])
+  return { muted, toggle, gentlyEnable: play, playerRef, onPlayerLoad }
 }
 
 export default function App() {
   const [loading, setLoading] = useState(true), [stage, setStage] = useState('gift'), [opening, setOpening] = useState(false)
-  const { muted, toggle, gentlyEnable } = useAmbientSound()
+  const { muted, toggle, gentlyEnable, playerRef, onPlayerLoad } = useYouTubeMusic()
   useEffect(() => { const timer = setTimeout(() => setLoading(false), 1650); return () => clearTimeout(timer) }, [])
   const openGift = () => { if (opening) return; setOpening(true); gentlyEnable(); setTimeout(() => setStage('message'), 1550) }
   return <main className={`${stage === 'wish' ? 'app wish-mode' : 'app'} antialiased`}>
-    <Background wishMode={stage === 'wish'} /><AnimatePresence>{loading && <LoadingScreen />}</AnimatePresence>
+    <Background wishMode={stage === 'wish'} />
+    <iframe ref={playerRef} className="youtube-audio-player" onLoad={onPlayerLoad} title="Birthday song" src="https://www.youtube.com/embed/Tcv7Fmq8jgo?enablejsapi=1&playsinline=1&controls=0&loop=1&playlist=Tcv7Fmq8jgo&rel=0" allow="autoplay; encrypted-media" tabIndex="-1" aria-hidden="true" />
+    <AnimatePresence>{loading && <LoadingScreen />}</AnimatePresence>
     {!loading && <><SoundButton muted={muted} onToggle={toggle} /><AnimatePresence mode="wait">
       {stage === 'gift' && <motion.section className="gift-screen" key="gift" exit={{ opacity: 0, scale: 1.06, filter: 'blur(14px)' }} transition={{ duration: 1, ease }}><motion.div className="gift-intro" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 1 }}><span>FOR SOMEONE WONDERFUL</span><i /></motion.div><GiftBox opening={opening} onOpen={openGift} /><motion.p className="tap-copy" initial={{ opacity: 0, y: 10 }} animate={{ opacity: opening ? 0 : 1, y: 0 }} transition={{ duration: .8, delay: .7 }}>Tap to open your gift.</motion.p><Confetti visible={opening} /></motion.section>}
       {stage === 'message' && <motion.div className="message-screen" key="message" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, scale: .96, filter: 'blur(12px)' }} transition={{ duration: 1.2, ease }}><BirthdayMessage onWish={() => setStage('wish')} /></motion.div>}
