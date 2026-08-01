@@ -21,7 +21,7 @@ function LoadingScreen() {
 }
 
 function GiftBox({ opening, onOpen }) {
-  return <motion.button className="gift-button" aria-label="Open Leen's birthday gift" onClick={onOpen} disabled={opening}
+  return <motion.button type="button" className="gift-button" aria-label="Open Leen's birthday gift" onClick={onOpen} disabled={opening}
     initial={{ opacity: 0, scale: .82, y: 30 }} animate={{ opacity: 1, scale: 1, y: opening ? 60 : [0, -11, 0] }}
     transition={opening ? { duration: 1.1, ease } : { opacity: { duration: 1 }, scale: { duration: 1, ease }, y: { duration: 3.8, repeat: Infinity, ease: 'easeInOut' } }}
     whileHover={!opening ? { scale: 1.035 } : undefined} whileTap={!opening ? { scale: .97 } : undefined}>
@@ -50,7 +50,7 @@ function BirthdayMessage({ onWish }) {
     <motion.h1 variants={line}><span>Happy Birthday,</span> Leen! <b>✦</b></motion.h1>
     <div className="message-copy">{messageLines.map((text, index) => <motion.p key={text} className={index === 0 || index >= 5 ? 'emphasis' : ''} variants={line}>{text}</motion.p>)}</div>
     {/* <motion.p className="omar-dedication" variants={line}>From Omar, to his favorite person 🤍</motion.p> */}
-    <motion.button className="wish-button" variants={line} whileHover={{ y: -2, scale: 1.02 }} whileTap={{ scale: .97 }} onClick={onWish}>Make a Wish <span>✦</span></motion.button>
+    <motion.button type="button" className="wish-button" variants={line} whileHover={{ y: -2, scale: 1.02 }} whileTap={{ scale: .97 }} onClick={onWish}>Make a Wish <span aria-hidden="true">✦</span></motion.button>
   </motion.section>
 }
 
@@ -66,7 +66,7 @@ function WishScene() {
 }
 
 function SoundButton({ muted, onToggle }) {
-  return <motion.button className="sound-button" onClick={onToggle} aria-label={muted ? 'Turn music on' : 'Mute music'} whileTap={{ scale: .9 }}><span className={muted ? 'sound-bars muted' : 'sound-bars'}>{[0,1,2,3].map(i => <i key={i} />)}</span><span>{muted ? 'Sound off' : 'Sound on'}</span></motion.button>
+  return <motion.button type="button" className="sound-button" onClick={onToggle} aria-label={muted ? 'Turn music on' : 'Mute music'} aria-pressed={!muted} whileTap={{ scale: .9 }}><span className={muted ? 'sound-bars muted' : 'sound-bars'} aria-hidden="true">{[0,1,2,3].map(i => <i key={i} />)}</span><span>{muted ? 'Sound off' : 'Sound on'}</span></motion.button>
 }
 
 function useYouTubeMusic() {
@@ -98,8 +98,15 @@ function useYouTubeMusic() {
 export default function App() {
   const [loading, setLoading] = useState(true), [stage, setStage] = useState('gift'), [opening, setOpening] = useState(false)
   const { muted, toggle, gentlyEnable, playerRef, onPlayerLoad } = useYouTubeMusic()
+  const stageTimerRef = useRef(null)
   useEffect(() => { const timer = setTimeout(() => setLoading(false), 1650); return () => clearTimeout(timer) }, [])
-  const openGift = () => { if (opening) return; setOpening(true); gentlyEnable(); setTimeout(() => setStage('message'), 1550) }
+  useEffect(() => () => clearTimeout(stageTimerRef.current), [])
+  const openGift = () => {
+    if (opening) return
+    setOpening(true)
+    gentlyEnable()
+    stageTimerRef.current = setTimeout(() => setStage('message'), 1550)
+  }
   return <main className={`${stage === 'wish' ? 'app wish-mode' : 'app'} antialiased`}>
     <Background wishMode={stage === 'wish'} />
     <iframe ref={playerRef} className="youtube-audio-player" onLoad={onPlayerLoad} title="Birthday song" src="https://www.youtube.com/embed/Tcv7Fmq8jgo?enablejsapi=1&playsinline=1&controls=0&loop=1&playlist=Tcv7Fmq8jgo&rel=0" allow="autoplay; encrypted-media" tabIndex="-1" aria-hidden="true" />
