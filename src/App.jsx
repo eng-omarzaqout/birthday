@@ -40,6 +40,38 @@ function Confetti({ visible }) {
   return <AnimatePresence>{visible && <div className="confetti" aria-hidden="true">{pieces.map(p => <motion.i key={p.id} style={{ background: p.color }} initial={{ x: 0, y: 0, opacity: 0, rotate: 0, scale: 0 }} animate={{ x: p.x, y: p.y, opacity: [0, 1, 1, 0], rotate: p.rotate, scale: [0, 1, 1] }} transition={{ duration: 1.65 + seeded(p.id, 5), delay: p.delay, ease }} />)}</div>}</AnimatePresence>
 }
 
+function FallingFlowers() {
+  const colors = ['red', 'yellow', 'babyblue']
+  const flowers = useMemo(() => Array.from({ length: 24 }, (_, i) => ({
+    id: i,
+    color: colors[i % colors.length],
+    x: 2 + seeded(i, 21) * 96,
+    size: 18 + seeded(i, 22) * 20,
+    duration: 8 + seeded(i, 23) * 7,
+    delay: -seeded(i, 24) * 15,
+    drift: (seeded(i, 25) - .5) * 120,
+    rotate: (seeded(i, 26) > .5 ? 1 : -1) * (240 + seeded(i, 27) * 380),
+  })), [])
+
+  return <div className="falling-flowers" aria-hidden="true">
+    {flowers.map(flower => <motion.span
+      key={flower.id}
+      className={`falling-flower flower-${flower.color}`}
+      style={{ left: `${flower.x}%`, width: flower.size, height: flower.size }}
+      initial={{ y: '-12vh', x: 0, rotate: 0 }}
+      animate={{ y: '115vh', x: [0, flower.drift, flower.drift * .35, 0], rotate: flower.rotate }}
+      transition={{ duration: flower.duration, delay: flower.delay, repeat: Infinity, ease: 'linear' }}
+    >
+      <span className="rose-bloom">
+        <i className="rose-petal outer petal-one" /><i className="rose-petal outer petal-two" />
+        <i className="rose-petal outer petal-three" /><i className="rose-petal outer petal-four" />
+        <i className="rose-petal inner petal-five" /><i className="rose-petal inner petal-six" />
+        <i className="rose-petal inner petal-seven" /><i className="rose-heart" />
+      </span>
+    </motion.span>)}
+  </div>
+}
+
 const messageLines = ['Welcome to Chapter 24.', 'May this year bring you happiness,', 'new adventures,', 'beautiful memories,', "and everything you've been hoping for.", 'Keep smiling.', 'Keep shining.', 'Keep being yourself.', 'Have an amazing birthday! 🤍']
 
 function BirthdayMessage({ onWish }) {
@@ -102,6 +134,7 @@ export default function App() {
   const openGift = () => { if (opening) return; setOpening(true); gentlyEnable(); setTimeout(() => setStage('message'), 1550) }
   return <main className={`${stage === 'wish' ? 'app wish-mode' : 'app'} antialiased`}>
     <Background wishMode={stage === 'wish'} />
+    {!loading && <FallingFlowers />}
     <iframe ref={playerRef} className="youtube-audio-player" onLoad={onPlayerLoad} title="Birthday song" src="https://www.youtube.com/embed/Tcv7Fmq8jgo?enablejsapi=1&playsinline=1&controls=0&loop=1&playlist=Tcv7Fmq8jgo&rel=0" allow="autoplay; encrypted-media" tabIndex="-1" aria-hidden="true" />
     <AnimatePresence>{loading && <LoadingScreen />}</AnimatePresence>
     {!loading && <><SoundButton muted={muted} onToggle={toggle} /><AnimatePresence mode="wait">
